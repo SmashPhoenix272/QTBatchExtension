@@ -36,13 +36,14 @@ class TranslationQueue {
 
 const translationQueue = new TranslationQueue();
 
-function detectAndReplaceChinese() {
+function detectAndReplaceChinese(rootNode = document.body) {
     const textNodes = [];
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
 
     while (walker.nextNode()) {
         const node = walker.currentNode;
-        if (node.nodeValue.trim() !== '' && /[\u4e00-\u9fa5]/.test(node.nodeValue)) {
+        if (node.nodeValue.trim() !== '' && /[\u4e00-\u9fa5]/.test(node.nodeValue) && 
+            (!node.parentElement || !node.parentElement.hasAttribute('data-translated'))) {
             textNodes.push(node);
         }
     }
@@ -62,7 +63,14 @@ function detectAndReplaceChinese() {
                 }, response => {
                     if (response && response.translatedTexts) {
                         batch.forEach((node, index) => {
-                            node.nodeValue = response.translatedTexts[index];
+                            try {
+                                node.nodeValue = response.translatedTexts[index];
+                                if (node.parentElement) {
+                                    node.parentElement.setAttribute('data-translated', 'true');
+                                }
+                            } catch (error) {
+                                console.error('Error updating node:', error);
+                            }
                         });
                     }
                     resolve();
@@ -70,6 +78,29 @@ function detectAndReplaceChinese() {
             })
         });
     });
+}
+
+// MutationObserver to watch for DOM changes
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    detectAndReplaceChinese(node);
+                } else if (node.nodeType === Node.TEXT_NODE) {
+                    detectAndReplaceChinese(node.parentNode);
+                }
+            });
+        }
+    });
+});
+
+function startObserver() {
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function stopObserver() {
+    observer.disconnect();
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -81,12 +112,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.storage.sync.get('autoConvert', function(data) {
     if (data.autoConvert) {
         detectAndReplaceChinese();
+        startObserver();
     }
 });
 
 // Listen for changes to autoConvert setting
 chrome.storage.onChanged.addListener(function(changes, namespace) {
-    if (changes.autoConvert && changes.autoConvert.newValue) {
-        detectAndReplaceChinese();
+    if (changes.autoConvert) {
+        if (changes.autoConvert.newValue) {
+            detectAndReplaceChinese();
+            startObserver();
+        } else {
+            stopObserver();
+        }
     }
 });

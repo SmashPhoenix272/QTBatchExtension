@@ -64,6 +64,7 @@ The project uses several data files for translation and text processing:
 - Handles special characters and names
 - Efficient text processing using Trie data structures
 - Supports batch processing of large texts
+- **New**: Dynamically translates content as it updates (e.g., in chat applications or live-updating websites)
 
 ## Installation
 
@@ -93,6 +94,9 @@ The project uses several data files for translation and text processing:
 1. Click on the QTBatchEx icon in your Chrome browser
 2. Navigate to a webpage with Chinese text
 3. The extension will automatically detect and translate the text to Sino-Vietnamese
+4. For dynamically updating content (e.g., chat applications):
+   - The extension will continuously monitor for new Chinese text
+   - New content will be automatically translated as it appears
 
 ## Development
 
@@ -120,4 +124,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Trie data structure](https://en.wikipedia.org/wiki/Trie) for efficient text processing
 - [Chrome Extension API](https://developer.chrome.com/docs/extensions/) for browser integration
+- [MutationObserver API](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) for handling dynamic content
 - All contributors who have helped to improve this project
