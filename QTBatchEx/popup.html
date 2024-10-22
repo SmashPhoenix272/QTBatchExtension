@@ -61,12 +61,14 @@
         input:checked + .slider:before {
             transform: translateX(26px);
         }
-        .convert-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
+        .button-container {
+            display: flex;
+            justify-content: space-between;
             margin-top: 20px;
-            background-color: #4CAF50;
+        }
+        .convert-btn, .revert-btn {
+            width: 48%;
+            padding: 10px;
             color: white;
             border: none;
             border-radius: 4px;
@@ -74,8 +76,17 @@
             font-size: 16px;
             transition: background-color 0.3s;
         }
+        .convert-btn {
+            background-color: #4CAF50;
+        }
         .convert-btn:hover {
             background-color: #45a049;
+        }
+        .revert-btn {
+            background-color: #f44336;
+        }
+        .revert-btn:hover {
+            background-color: #d32f2f;
         }
         .server-status {
             margin-top: 10px;
@@ -93,10 +104,10 @@
         .disconnected {
             color: #f44336;
         }
-        .server-address {
+        .server-address, .delay-input {
             margin-top: 20px;
         }
-        .server-address input {
+        .server-address input, .delay-input input {
             width: 100%;
             padding: 8px;
             margin-top: 5px;
@@ -128,7 +139,14 @@
             <span class="slider"></span>
         </label>
         <span>Auto Convert</span>
-        <button id="convertBtn" class="convert-btn">Convert Now</button>
+        <div class="delay-input">
+            <label for="revertDelay">Revert Delay (ms):</label>
+            <input type="number" id="revertDelay" min="0" step="100" value="1000">
+        </div>
+        <div class="button-container">
+            <button id="convertBtn" class="convert-btn">Convert Now</button>
+            <button id="revertBtn" class="revert-btn">Revert</button>
+        </div>
         <div class="server-status">
             <div id="serverStatus">
                 <span class="status-icon">&#10060;</span>

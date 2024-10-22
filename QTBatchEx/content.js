@@ -36,6 +36,12 @@ class TranslationQueue {
 
 const translationQueue = new TranslationQueue();
 
+// Store original text content
+const originalTextMap = new Map();
+
+// Flag to temporarily disable auto-convert
+let autoConvertPaused = false;
+
 function detectAndReplaceChinese(rootNode = document.body) {
     const textNodes = [];
     const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
@@ -45,6 +51,8 @@ function detectAndReplaceChinese(rootNode = document.body) {
         if (node.nodeValue.trim() !== '' && /[\u4e00-\u9fa5]/.test(node.nodeValue) && 
             (!node.parentElement || !node.parentElement.hasAttribute('data-translated'))) {
             textNodes.push(node);
+            // Store original text
+            originalTextMap.set(node, node.nodeValue);
         }
     }
 
@@ -80,8 +88,26 @@ function detectAndReplaceChinese(rootNode = document.body) {
     });
 }
 
+function revertTranslation(revertDelay) {
+    autoConvertPaused = true;
+    originalTextMap.forEach((originalText, node) => {
+        if (node.parentElement && node.parentElement.hasAttribute('data-translated')) {
+            node.nodeValue = originalText;
+            node.parentElement.removeAttribute('data-translated');
+        }
+    });
+    originalTextMap.clear();
+    
+    // Re-enable auto-convert after the specified delay
+    setTimeout(() => {
+        autoConvertPaused = false;
+    }, revertDelay);
+}
+
 // MutationObserver to watch for DOM changes
 const observer = new MutationObserver((mutations) => {
+    if (autoConvertPaused) return;
+    
     mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
             mutation.addedNodes.forEach((node) => {
@@ -106,6 +132,8 @@ function stopObserver() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "manualConvert") {
         detectAndReplaceChinese();
+    } else if (request.action === "revert") {
+        revertTranslation(request.revertDelay);
     }
 });
 
