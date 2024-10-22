@@ -33,7 +33,7 @@ RUN mkdir /app/data
 EXPOSE 2210
 
 # Define environment variable
-ENV NAME World
+ENV NAME=World
 
 # Run server.py when the container launches
 CMD ["python", "server.py"]
