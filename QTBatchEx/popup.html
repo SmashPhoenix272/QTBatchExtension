@@ -104,6 +104,20 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+        .refresh-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .refresh-btn:hover {
+            background-color: #0b7dda;
+        }
     </style>
 </head>
 <body>
@@ -115,9 +129,12 @@
         </label>
         <span>Auto Convert</span>
         <button id="convertBtn" class="convert-btn">Convert Now</button>
-        <div id="serverStatus" class="server-status">
-            <span class="status-icon">&#10060;</span>
-            <span>Server Disconnected</span>
+        <div class="server-status">
+            <div id="serverStatus">
+                <span class="status-icon">&#10060;</span>
+                <span>Server Disconnected</span>
+            </div>
+            <button id="refreshBtn" class="refresh-btn">Refresh</button>
         </div>
         <div class="server-address">
             <label for="serverAddress">Server Address:</label>

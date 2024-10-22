@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertBtn = document.getElementById('convertBtn');
     const serverStatus = document.getElementById('serverStatus');
     const serverAddressInput = document.getElementById('serverAddress');
+    const refreshBtn = document.getElementById('refreshBtn');
 
     // Load saved state
     chrome.storage.sync.get(['autoConvert', 'serverAddress'], function(data) {
@@ -33,10 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Handle refresh button click
+    refreshBtn.addEventListener('click', function() {
+        checkServerConnection();
+    });
+
     // Check server connection
     function checkServerConnection() {
         chrome.storage.sync.get('serverAddress', function(data) {
             const serverAddress = data.serverAddress || 'http://localhost:2210';
+            serverStatus.innerHTML = '<span class="status-icon">&#8987;</span><span>Checking connection...</span>';
+            serverStatus.classList.remove('connected', 'disconnected');
+            
             fetch(`${serverAddress}/ping`)
                 .then(response => response.json())
                 .then(data => {
