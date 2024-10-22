@@ -39,10 +39,15 @@ const translationQueue = new TranslationQueue();
 // Store original text content
 const originalTextMap = new Map();
 
+// Flag to control auto-convert functionality
+let autoConvertEnabled = false;
+
 // Flag to temporarily disable auto-convert
 let autoConvertPaused = false;
 
-function detectAndReplaceChinese(rootNode = document.body) {
+function detectAndReplaceChinese(rootNode = document.body, isHoverContent = false, isManualConvert = false) {
+    if ((!autoConvertEnabled || autoConvertPaused) && !isManualConvert) return;
+
     const textNodes = [];
     const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
 
@@ -71,14 +76,7 @@ function detectAndReplaceChinese(rootNode = document.body) {
                 }, response => {
                     if (response && response.translatedTexts) {
                         batch.forEach((node, index) => {
-                            try {
-                                node.nodeValue = response.translatedTexts[index];
-                                if (node.parentElement) {
-                                    node.parentElement.setAttribute('data-translated', 'true');
-                                }
-                            } catch (error) {
-                                console.error('Error updating node:', error);
-                            }
+                            updateNode(node, response.translatedTexts[index], isHoverContent);
                         });
                     }
                     resolve();
@@ -88,12 +86,27 @@ function detectAndReplaceChinese(rootNode = document.body) {
     });
 }
 
+function updateNode(node, translation, isHoverContent) {
+    try {
+        node.nodeValue = translation;
+        if (node.parentElement) {
+            node.parentElement.setAttribute('data-translated', 'true');
+            if (isHoverContent) {
+                node.parentElement.setAttribute('data-hover-translated', 'true');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating node:', error);
+    }
+}
+
 function revertTranslation(revertDelay) {
     autoConvertPaused = true;
     originalTextMap.forEach((originalText, node) => {
         if (node.parentElement && node.parentElement.hasAttribute('data-translated')) {
             node.nodeValue = originalText;
             node.parentElement.removeAttribute('data-translated');
+            node.parentElement.removeAttribute('data-hover-translated');
         }
     });
     originalTextMap.clear();
@@ -101,12 +114,60 @@ function revertTranslation(revertDelay) {
     // Re-enable auto-convert after the specified delay
     setTimeout(() => {
         autoConvertPaused = false;
+        if (autoConvertEnabled) {
+            detectAndReplaceChinese();
+        }
     }, revertDelay);
 }
 
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Improved function to handle hover events
+function handleHover(event) {
+    if (!autoConvertEnabled || autoConvertPaused) return;
+
+    const target = event.target;
+
+    // Check for any newly visible elements
+    const hoverContent = document.elementsFromPoint(event.clientX, event.clientY);
+    hoverContent.forEach(element => {
+        detectAndReplaceChinese(element, true);
+    });
+
+    // Check for title attribute
+    if (target.title && /[\u4e00-\u9fa5]/.test(target.title)) {
+        const originalTitle = target.title;
+        chrome.runtime.sendMessage({
+            action: "translateBatch",
+            texts: [originalTitle],
+            batchIndex: 0
+        }, response => {
+            if (response && response.translatedTexts) {
+                target.title = response.translatedTexts[0];
+                target.setAttribute('data-original-title', originalTitle);
+                target.setAttribute('data-hover-translated', 'true');
+            }
+        });
+    }
+}
+
+// Debounced hover handler
+const debouncedHandleHover = debounce(handleHover, 100);
+
 // MutationObserver to watch for DOM changes
 const observer = new MutationObserver((mutations) => {
-    if (autoConvertPaused) return;
+    if (!autoConvertEnabled || autoConvertPaused) return;
     
     mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
@@ -117,37 +178,39 @@ const observer = new MutationObserver((mutations) => {
                     detectAndReplaceChinese(node.parentNode);
                 }
             });
+        } else if (mutation.type === 'attributes' && mutation.attributeName === 'title') {
+            const target = mutation.target;
+            if (target.title && /[\u4e00-\u9fa5]/.test(target.title) && !target.hasAttribute('data-hover-translated')) {
+                handleHover({ target: target, clientX: 0, clientY: 0 });
+            }
         }
     });
 });
 
 function startObserver() {
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { 
+        childList: true, 
+        subtree: true, 
+        attributes: true, 
+        attributeFilter: ['title'] 
+    });
+    // Add event listeners for hover
+    document.body.addEventListener('mouseover', debouncedHandleHover, true);
 }
 
 function stopObserver() {
     observer.disconnect();
+    document.body.removeEventListener('mouseover', debouncedHandleHover, true);
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "manualConvert") {
-        detectAndReplaceChinese();
+        detectAndReplaceChinese(document.body, false, true);
     } else if (request.action === "revert") {
         revertTranslation(request.revertDelay);
-    }
-});
-
-chrome.storage.sync.get('autoConvert', function(data) {
-    if (data.autoConvert) {
-        detectAndReplaceChinese();
-        startObserver();
-    }
-});
-
-// Listen for changes to autoConvert setting
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-    if (changes.autoConvert) {
-        if (changes.autoConvert.newValue) {
+    } else if (request.action === "updateAutoConvert") {
+        autoConvertEnabled = request.enabled;
+        if (autoConvertEnabled) {
             detectAndReplaceChinese();
             startObserver();
         } else {
@@ -155,3 +218,33 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
         }
     }
 });
+
+// Function to handle dynamically loaded content
+function handleDynamicContent() {
+    if (autoConvertEnabled && !autoConvertPaused) {
+        detectAndReplaceChinese(document.body, true);
+    }
+}
+
+// Set up a MutationObserver for dynamic content
+const dynamicContentObserver = new MutationObserver(handleDynamicContent);
+
+// Function to initialize the extension
+function initializeExtension() {
+    chrome.storage.sync.get('autoConvert', function(data) {
+        autoConvertEnabled = data.autoConvert;
+        if (autoConvertEnabled) {
+            detectAndReplaceChinese();
+            startObserver();
+            dynamicContentObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    });
+}
+
+// Initialize the extension when the content script loads
+initializeExtension();
+
+// Re-initialize on page loads (for single-page applications)
+window.addEventListener('load', initializeExtension);
+
+// We've removed the setInterval call to avoid repeated initializations

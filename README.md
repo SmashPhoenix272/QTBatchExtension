@@ -2,6 +2,8 @@
 
 QTBatchEx is a Chrome extension that detects Chinese text on webpages and converts it to Sino-Vietnamese. It consists of a Chrome extension frontend and a Python backend for text processing and translation.
 
+![QTBatchEx](image/README/QTBatchEx.png)
+
 ## Project Structure
 
 The project is organized as follows:
