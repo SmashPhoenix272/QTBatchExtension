@@ -63,10 +63,13 @@ def load_data() -> Tuple[Trie, Trie, Trie, Dict[str, str], Dict[str, Dict[str, A
         "viet_phrase": {"loaded": False, "count": 0, "time": 0}
     }
 
+    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+
     def load_file(file_name: str, trie: Trie, info_key: str, split_values: bool = False):
+        file_path = os.path.join(data_dir, file_name)
         try:
             start_time = time.time()
-            with open(file_name, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 entries = []
                 for line in f:
                     parts = line.strip().split('=')
@@ -83,7 +86,7 @@ def load_data() -> Tuple[Trie, Trie, Trie, Dict[str, str], Dict[str, Dict[str, A
             loading_info[info_key]["time"] = time.time() - start_time
             logging.info(f"Loaded {trie.count()} entries from {file_name} in {loading_info[info_key]['time']:.2f} seconds")
         except FileNotFoundError:
-            logging.error(f"{file_name} not found. Proceeding without {info_key} data.")
+            logging.error(f"{file_name} not found in {data_dir}. Proceeding without {info_key} data.")
         except Exception as e:
             logging.error(f"Error loading {file_name}: {str(e)}")
 
@@ -96,14 +99,15 @@ def load_data() -> Tuple[Trie, Trie, Trie, Dict[str, str], Dict[str, Dict[str, A
     # Load ChinesePhienAmWords.txt
     try:
         start_time = time.time()
-        with open('ChinesePhienAmWords.txt', 'r', encoding='utf-8') as f:
+        file_path = os.path.join(data_dir, 'ChinesePhienAmWords.txt')
+        with open(file_path, 'r', encoding='utf-8') as f:
             chinese_phien_am = dict(line.strip().split('=') for line in f if len(line.strip().split('=')) == 2)
         loading_info["chinese_words"]["loaded"] = True
         loading_info["chinese_words"]["count"] = len(chinese_phien_am)
         loading_info["chinese_words"]["time"] = time.time() - start_time
         logging.info(f"Loaded {len(chinese_phien_am)} Chinese words in {loading_info['chinese_words']['time']:.2f} seconds")
     except FileNotFoundError:
-        logging.error("ChinesePhienAmWords.txt not found.")
+        logging.error(f"ChinesePhienAmWords.txt not found in {data_dir}.")
     except Exception as e:
         logging.error(f"Error loading ChinesePhienAmWords.txt: {str(e)}")
 

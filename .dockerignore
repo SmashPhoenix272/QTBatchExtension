@@ -1,0 +1,6 @@
+*.txt
+.git
+.gitignore
+README.md
+LICENSE
+QTBatchEx/

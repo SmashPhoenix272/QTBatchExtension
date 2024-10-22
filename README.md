@@ -8,24 +8,28 @@ The project is organized as follows:
 
 ```
 QTBatchExtension/
-├── ChinesePhienAmWords.txt
-├── Names.txt
 ├── QuickTranslator.py
 ├── ReplaceChar.py
 ├── server.py
-├── VietPhrase.txt
 ├── models/
 │   └── trie.py
-└── QTBatchEx/
-    ├── background.js
-    ├── content.js
-    ├── icon16.png
-    ├── icon48.png
-    ├── icon64.png
-    ├── icon128.png
-    ├── manifest.json
-    ├── popup.html
-    └── popup.js
+├── QTBatchEx/
+│   ├── background.js
+│   ├── content.js
+│   ├── icon16.png
+│   ├── icon48.png
+│   ├── icon64.png
+│   ├── icon128.png
+│   ├── manifest.json
+│   ├── popup.html
+│   └── popup.js
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── .dockerignore
+└── .github/
+    └── workflows/
+        └── docker-build-push.yml
 ```
 
 ## Components
@@ -49,13 +53,15 @@ The Python backend handles the translation of Chinese text to Sino-Vietnamese. I
 - `server.py`: Server script to handle requests from the Chrome extension
 - `models/trie.py`: Implementation of a Trie data structure for efficient text processing
 
-### Data Files
+### Data Files (Not included in repository)
 
-The project uses several data files for translation and text processing:
+The project requires several data files for translation and text processing:
 
 - `ChinesePhienAmWords.txt`: Chinese to Sino-Vietnamese word mappings
 - `Names.txt`: Name translations
 - `VietPhrase.txt`: Vietnamese phrases and translations
+
+These files should be placed in a `data` directory when running the Docker container.
 
 ## Features
 
@@ -64,19 +70,39 @@ The project uses several data files for translation and text processing:
 - Handles special characters and names
 - Efficient text processing using Trie data structures
 - Supports batch processing of large texts
-- **New**: Dynamically translates content as it updates (e.g., in chat applications or live-updating websites)
+- Dynamically translates content as it updates (e.g., in chat applications or live-updating websites)
 
 ## Installation
+
+### Option 1: Docker Installation (Recommended)
+
+1. Pull the Docker image from Docker Hub:
+   ```
+   docker pull yourusername/qtbatchex:latest
+   ```
+
+2. Create a `data` directory in the same location as your docker-compose.yml file and place the required text files (ChinesePhienAmWords.txt, Names.txt, VietPhrase.txt) in it.
+
+3. Run the Docker container:
+   ```
+   docker-compose up -d
+   ```
+
+   This will start the server on port 2210.
+
+4. Install the Chrome extension:
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked" and select the `QTBatchEx` folder
+
+### Option 2: Local Installation
 
 1. Clone the repository:
    ```
    git clone https://github.com/your-username/QTBatchExtension.git
    ```
 
-2. Install the Chrome extension:
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked" and select the `QTBatchEx` folder
+2. Install the Chrome extension as described in Option 1, step 4.
 
 3. Set up the Python backend:
    - Ensure you have Python 3.x installed
@@ -84,6 +110,7 @@ The project uses several data files for translation and text processing:
      ```
      pip install -r requirements.txt
      ```
+   - Create a `data` directory in the project root and place the required text files in it
    - Run the server script:
      ```
      python server.py
@@ -104,7 +131,29 @@ To modify or extend the project:
 
 1. Edit the Chrome extension files in the `QTBatchEx` folder
 2. Modify the Python backend scripts as needed
-3. Update data files (`ChinesePhienAmWords.txt`, `Names.txt`, `VietPhrase.txt`) to improve translation quality
+3. Update data files in the `data` directory to improve translation quality
+
+If you're using Docker for development:
+1. Make changes to the code
+2. Rebuild the Docker image:
+   ```
+   docker build -t yourusername/qtbatchex:latest .
+   ```
+3. Push the image to Docker Hub:
+   ```
+   docker push yourusername/qtbatchex:latest
+   ```
+
+### GitHub Actions
+
+This project uses GitHub Actions to automatically build and push the Docker image to Docker Hub when changes are pushed to the main branch. To set up GitHub Actions for your fork:
+
+1. Fork this repository
+2. Go to your fork's Settings > Secrets and variables > Actions
+3. Add the following secrets:
+   - `DOCKERHUB_USERNAME`: Your Docker Hub username
+   - `DOCKERHUB_TOKEN`: Your Docker Hub access token (create one in Docker Hub account settings)
+4. Push changes to the main branch, and GitHub Actions will automatically build and push the Docker image
 
 ## Contributing
 
@@ -125,4 +174,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Trie data structure](https://en.wikipedia.org/wiki/Trie) for efficient text processing
 - [Chrome Extension API](https://developer.chrome.com/docs/extensions/) for browser integration
 - [MutationObserver API](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) for handling dynamic content
+- [Docker](https://www.docker.com/) for containerization and easy deployment
+- [GitHub Actions](https://github.com/features/actions) for CI/CD
 - All contributors who have helped to improve this project

@@ -1,0 +1,10 @@
+version: '3'
+services:
+  qtbatch-server:
+    build: .
+    ports:
+      - "2210:2210"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - FLASK_ENV=production
