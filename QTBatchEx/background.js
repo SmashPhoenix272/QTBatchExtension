@@ -1,21 +1,24 @@
-const SERVER_URL = 'http://localhost:2210/translate_batch'; // Updated to use the batch translation endpoint
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "translateBatch") {
-        fetch(SERVER_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ texts: request.texts }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            sendResponse({ translatedTexts: data.translatedTexts });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            sendResponse({ error: 'Translation failed' });
+        chrome.storage.sync.get('serverAddress', function(data) {
+            const serverAddress = data.serverAddress || 'http://localhost:2210';
+            const SERVER_URL = `${serverAddress}/translate_batch`;
+
+            fetch(SERVER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ texts: request.texts }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                sendResponse({ translatedTexts: data.translatedTexts });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                sendResponse({ error: 'Translation failed' });
+            });
         });
         return true; // Indicates that the response is sent asynchronously
     } else if (request.action === "startAutoConvert") {
@@ -31,5 +34,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Initialize extension state
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.sync.set({ autoConvert: false });
+    chrome.storage.sync.set({ 
+        autoConvert: false,
+        serverAddress: 'http://localhost:2210'
+    });
 });

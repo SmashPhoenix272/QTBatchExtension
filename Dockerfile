@@ -12,11 +12,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install required python packages
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt || \
+# Print Python and pip versions
+RUN python --version && pip --version
+
+# Upgrade pip and install wheel
+RUN pip install --upgrade pip wheel
+
+# Install required python packages
+RUN pip install --no-cache-dir -r requirements.txt -v || \
     (echo "Failed to install requirements. Contents of requirements.txt:" && \
      cat requirements.txt && \
+     pip list && \
+     pip check && \
      exit 1)
 
 # Create a data directory

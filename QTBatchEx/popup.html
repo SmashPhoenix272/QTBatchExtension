@@ -93,6 +93,17 @@
         .disconnected {
             color: #f44336;
         }
+        .server-address {
+            margin-top: 20px;
+        }
+        .server-address input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -107,6 +118,10 @@
         <div id="serverStatus" class="server-status">
             <span class="status-icon">&#10060;</span>
             <span>Server Disconnected</span>
+        </div>
+        <div class="server-address">
+            <label for="serverAddress">Server Address:</label>
+            <input type="text" id="serverAddress" placeholder="http://localhost:2210">
         </div>
     </div>
     <script src="popup.js"></script>

@@ -33,10 +33,21 @@ jobs:
     - name: Display Docker build logs
       if: failure()
       run: |
-        docker build . --progress=plain
+        docker build . --progress=plain --no-cache
 
     - name: Display requirements.txt
       if: failure()
       run: |
         echo "Contents of requirements.txt:"
         cat requirements.txt
+
+    - name: Check Python and pip versions
+      if: failure()
+      run: |
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/qtbatchextension:latest python --version
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/qtbatchextension:latest pip --version
+
+    - name: List installed packages
+      if: failure()
+      run: |
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/qtbatchextension:latest pip list
